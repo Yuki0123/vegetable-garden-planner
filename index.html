@@ -1,0 +1,875 @@
+
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Vegetable Garden Planner</title>
+<style>
+  :root{
+    --bg:#f5f3f0; --fg:#4a403a; --muted:#8d817a;
+    --brand:#556b2f; --brand-weak:#e9ede3;
+    --card:#fdfcfb; --line:#e0dcd7;
+    --plot:#6b4f3a; --plot-edge:#4a3728;
+    --accent:#8f9a6d;
+    --today-bg: #fffbe6;
+    --selected-bg: #e9ede3;
+    --weather-text: #78716c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif; background:var(--bg); color:var(--fg)}
+  .appbar{position:sticky; top:0; z-index:10; background:var(--brand); color:#fff; padding:14px 18px; border-radius:12px; margin:12px; text-align:center; font-weight:700; letter-spacing:.06em; font-size:16px}
+  .container{display:flex; flex-direction: column; gap:16px; padding:8px 12px 24px}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px}
+  .panel h3{margin:0 0 .75rem 0; font-size:16px; color:#2b3a2b}
+  .divider{height:1px; background:var(--line); margin:.35rem 0 .75rem}
+  .btn{appearance:none; border:1px solid var(--line); background:#fff; padding:.5rem .8rem; border-radius:8px; cursor:pointer; font-size: 14px; font-weight: 600;}
+  .btn.btn-sm { padding: .25rem .5rem; font-size: 12px; }
+  .board{background:var(--brand-weak); border:1px solid var(--line); border-radius:12px; padding:14px}
+  .areas{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .area{padding:6px}
+  .area h3{margin:6px 8px 10px; color:#2b3a2b}
+  .rows{display:flex; flex-direction:column; gap:12px}
+  .row{height:70px; border-radius:12px; background:var(--plot); border:1px solid var(--plot-edge); box-shadow: inset 0 1px 0 rgba(255,255,255,.06); padding:6px 10px; color:#e9d5c6; cursor:pointer; display:flex; align-items:center; gap:10px;}
+  .row:hover{filter:brightness(1.05)}
+  .row .tag{font-size:12px; opacity:.85; padding:2px 6px; border-radius:999px; border:1px solid rgba(255,255,255,.1); background:rgba(0,0,0,.2)}
+  
+  .crops-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .planted-crop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .18);
+    cursor: pointer;
+  }
+  .planted-crop:hover{background:rgba(255,255,255,.25);}
+  .planted-crop .icon{font-size:20px; line-height: 1;}
+  .planted-crop .icon-img { width: 24px; height: 24px; object-fit: contain; line-height: 1; }
+  .planted-crop .date{font-size:11px; opacity:.9; white-space: nowrap;}
+
+  .modal{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.45); z-index:20}
+  .modal-hidden{display:none}
+  .modal-card{background:#fff; border-radius:12px; padding:1.5rem; width:min(520px, 92vw); box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .modal-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem}
+  .modal-head h2{margin:0; font-size:1.2rem;}
+  .close-button{border:none; background:transparent; font-size:22px; cursor:pointer; color: #6b7280}
+  .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:1.5rem}
+  .btn.primary{background:var(--brand); color:#fff; border-color:transparent}
+  .btn.ghost{background:#f6f7f7}
+  .btn.danger{background: #fef2f2; border-color:#fecaca; color:#dc2626}
+  .form-group{margin-bottom:1rem}
+  .form-group label{display:block; margin-bottom:.5rem; font-weight:600; font-size:14px; color:#374151}
+  .form-group input, .form-group select{width:100%; padding:.5rem .75rem; border:1px solid var(--line); border-radius:8px; font-size:14px; background-color: #f9fafb;}
+  .overlay{position:fixed; inset:0; background:rgba(255,255,255,.65); display:flex; align-items:center; justify-content:center; z-index:30; opacity:0; pointer-events:none; transition:.2s}
+  .overlay.show{opacity:1; pointer-events:auto}
+  .spinner{width:66px; height:66px; border-radius:50%; border:6px solid #fff; border-left-color: var(--accent); animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .icon-tabs { display: flex; gap: 4px; margin-bottom: 8px; border-bottom: 2px solid var(--line); }
+  .tab-btn { appearance: none; border: none; background: transparent; padding: 8px 12px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; position: relative; top: 2px; transition: color .2s, border-color .2s; }
+  .tab-btn:hover { color: var(--fg); }
+  .tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
+  .icon-palette { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; padding: 8px; background-color: #f9fafb; border: 1px solid var(--line); border-radius: 8px; }
+  .icon-btn { appearance: none; border: 2px solid transparent; background: #fff; border-radius: 8px; width: 44px; height: 44px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color .2s, transform .1s; }
+  .icon-btn:hover { transform: scale(1.1); }
+  .icon-btn.selected { border-color: var(--brand); }
+  .image-upload-area { display: flex; align-items: center; gap: 10px; }
+  .image-input { width: 0.1px; height: 0.1px; opacity: 0; overflow: hidden; position: absolute; z-index: -1; }
+  .image-label { padding: .5rem .8rem; border-radius: 8px; cursor:pointer; background: #fff; border: 1px solid var(--line); font-size: 14px; font-weight: 600; }
+  .image-label:hover { background: #f4f4f5; }
+  .image-preview-hidden { display: none !important; }
+  #image-preview { display: block; width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid var(--line); }
+
+  .area-tabs { display: none; border-bottom: 1px solid var(--line); margin-bottom: 1rem; }
+  .area-tab { appearance: none; border: none; background: transparent; padding: .6rem 1rem; font-size: 15px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; position: relative; top: 1px; transition: color .2s, border-bottom-color .2s; }
+  .area-tab:hover { color: var(--fg); }
+  .area-tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+
+  /* Calendar Styles */
+  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+  .calendar-header h3 { margin: 0; font-size: 1.1rem; }
+  .calendar-nav { display: flex; gap: 0.5rem; align-items: center; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+  .week-view-container, .month-view-container {
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out;
+  }
+  .week-view-container {
+    max-height: 120px;
+  }
+  .month-view-container {
+    max-height: 0;
+  }
+  #calendar-panel.month-view-active .week-view-container {
+    max-height: 0;
+  }
+  #calendar-panel.month-view-active .month-view-container {
+    max-height: 500px;
+  }
+  .day-name { font-weight: 600; font-size: 0.8rem; color: var(--muted); padding-bottom: 0.5rem; }
+  .day { border-radius: 8px; padding: 6px 4px; cursor: pointer; transition: background-color 0.2s; border: 1px solid transparent; display: flex; flex-direction: column; justify-content: space-between; min-height: 80px;}
+  .week-view .day { min-height: 60px; }
+  .day:hover { background-color: var(--brand-weak); }
+  .day.other-month { color: var(--muted); opacity: 0.6; cursor: default; }
+  .day.other-month:hover { background-color: transparent; }
+  .day.today {
+    background-color: var(--today-bg);
+    border-color: var(--accent);
+  }
+  .day.today .day-number {
+    font-weight: 700;
+    color: var(--brand);
+  }
+  .day.selected { background-color: var(--selected-bg); border-color: var(--brand); }
+  .day-number { font-weight: 500; }
+  .weather-info { font-size: 0.75rem; color: var(--weather-text); margin-top: 4px; }
+  .weather-icon { font-size: 1.2rem; }
+
+  @media (max-width: 720px){ 
+    .areas{grid-template-columns:1fr; gap: 0;}
+    .area-tabs { display: flex; }
+    .area { display: none; }
+    .area.active { display: block; }
+    .area h3 { display: none; }
+    .day {min-height: 60px; padding: 4px 2px;}
+    .weather-info { font-size: 0.65rem; }
+    .weather-icon { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+  <div class="appbar">Vegetable Garden Planner</div>
+
+  <div class="container">
+    <!-- カレンダーパネル -->
+    <div class="panel" id="calendar-panel">
+      <!-- JavaScriptで描画 -->
+    </div>
+
+    <!-- 畑エリア -->
+    <div class="board">
+      <div class="area-tabs">
+        <button class="area-tab" data-area-target="area-A">エリアA</button>
+        <button class="area-tab active" data-area-target="area-B">エリアB</button>
+      </div>
+      <div class="areas">
+        <div class="area" id="area-A">
+          <h3>エリアA</h3>
+          <div class="rows" id="rows-A"></div>
+        </div>
+        <div class="area active" id="area-B">
+          <h3>エリアB</h3>
+          <div class="rows" id="rows-B"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- モーダル -->
+  <div id="crop-modal" class="modal modal-hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="modal-title">作物の追加・編集</h2>
+        <button id="modal-close-btn" class="close-button" title="閉じる" aria-label="閉じる">×</button>
+      </div>
+      <form id="crop-form" novalidate>
+        <input type="hidden" id="form-plot-id">
+        <input type="hidden" id="form-plot-area">
+        <input type="hidden" id="form-plot-row">
+
+        <div class="form-group">
+          <label for="form-plot-name">作物名</label>
+          <input type="text" id="form-plot-name" required>
+        </div>
+        <div class="form-group">
+          <label>アイコンを選択</label>
+          <input type="hidden" id="form-plot-icon">
+          <div id="icon-tabs" class="icon-tabs"></div>
+          <div id="icon-palette" class="icon-palette"></div>
+        </div>
+        <div class="form-group">
+            <label for="form-plot-image">または画像をアップロード</label>
+            <div class="image-upload-area">
+                <input type="file" id="form-plot-image" accept="image/*" class="image-input">
+                <label for="form-plot-image" class="image-label">ファイルを選択</label>
+                <img id="image-preview" src="" alt="画像プレビュー" class="image-preview-hidden">
+                <button type="button" id="clear-image-btn" class="btn ghost btn-sm" style="display: none;">クリア</button>
+            </div>
+        </div>
+        <div class="form-group">
+          <label for="form-plot-start-date">植付日</label>
+          <input type="date" id="form-plot-start-date" required>
+        </div>
+        <div class="form-group">
+          <label for="form-plot-end-date">終了日 (収穫/廃棄)</label>
+          <input type="date" id="form-plot-end-date">
+        </div>
+        <div class="form-group">
+          <label for="form-plot-status">ステータス</label>
+          <select id="form-plot-status">
+            <option value="growing">栽培中</option>
+            <option value="harvested">収穫済</option>
+            <option value="discarded">廃棄</option>
+          </select>
+        </div>
+
+        <div class="actions">
+          <button type="button" id="delete-btn" class="btn danger" style="margin-right: auto;">収穫/廃棄</button>
+          <button type="button" id="cancel-btn" class="btn ghost">キャンセル</button>
+          <button type="submit" id="save-btn" class="btn primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ローダー -->
+  <div id="loader" class="overlay" aria-hidden="true">
+    <div class="spinner" aria-label="Loading"></div>
+  </div>
+
+<script type="module">
+/* =======================
+   設定 & 型
+======================= */
+const AREAS = { 'エリアA': 10, 'エリアB': 10 };
+const CROP_CATEGORIES = {
+    '果菜類': [
+        { icon: '🍅', name: 'トマト' }, { icon: '🍆', name: 'ナス' }, { icon: '🥒', name: 'きゅうり' },
+        { icon: '🫑', name: 'ピーマン' }, { icon: '🌽', name: 'とうももろこし' }, { icon: '🎃', name: 'かぼちゃ' },
+        { icon: '🫛', name: 'えだまめ' }, { icon: '🌶️', name: '唐辛子' }, { icon: '🍓', name: 'いちご' }
+    ],
+    '葉茎菜類': [
+        { icon: '🥬', name: 'キャベツ' }, { icon: '🥦', name: 'ブロッコリー' }, { icon: '🧅', name: '玉ねぎ' },
+        { icon: '🌿', name: 'ほうれん草' }, { icon: '🍃', name: '小松菜' }, { icon: '☘️', name: 'パセリ' },
+        { icon: '🍀', name: 'ミント' }
+    ],
+    '根菜類': [
+        { icon: '🥕', name: 'にんじん' }, { icon: '🥔', name: 'じゃがいも' }, { icon: '🍠', name: 'さつまいも' },
+        { icon: '🧄', name: 'にんにく' }, { icon: '🫚', name: 'しょうが' }, { icon: '⬜', name: '大根' }
+    ],
+    'その他': [
+        { icon: '🍄', name: 'きのこ' }, { icon: '🌱', name: '苗' }
+    ]
+};
+
+let allCrops = []; // {id,name,icon,area,row,startDate,endDate,status}
+let selectedDate = new Date();
+let calendarDate = new Date();
+let isCalendarOpen = false;
+
+/* =======================
+   ストレージ・アダプタ
+======================= */
+// ===== Supabase storage adapter =====
+const SB_URL  = "https://srrwignhfrjfllpslolv.supabase.co";   // ←自分のURL
+const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycndpZ25oZnJqZmxscHNsb2x2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MTEyOTQsImV4cCI6MjA3NjE4NzI5NH0.ASZL4fBagqNz22Ax-oh1O69rDmZaXoyfp0b0_ZjVwYo";               // ←自分のanonキー
+
+const REST = (p) => `${SB_URL}/rest/v1${p}`;
+const baseHeaders = { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` };
+
+async function handle(res){
+  if(!res.ok){
+    const t = await res.text().catch(()=> "");
+    throw new Error(`HTTP ${res.status} ${res.statusText} ${t}`);
+  }
+  const ct = res.headers.get("content-type") || "";
+  return ct.includes("application/json") ? res.json() : undefined;
+}
+
+const toDbRow = (c) => ({
+  id: c.id, area: c.area, row_no: Number(c.row),
+  name: c.name, icon: c.icon ?? null,
+  start_date: c.startDate, end_date: c.endDate ?? null, status: c.status
+});
+const fromDbRow = (r) => ({
+  id: r.id, area: r.area, row: r.row_no,
+  name: r.name, icon: r.icon ?? '',
+  startDate: r.start_date, endDate: r.end_date, status: r.status
+});
+
+const storage = {
+  async load(){
+    showLoader(true);
+    try{
+      const q = new URLSearchParams({ select:"*", order:"start_date.desc,row_no.asc" });
+      const res = await fetch(REST(`/plots?${q}`), { headers: baseHeaders });
+      const rows = await handle(res);
+      return rows.map(fromDbRow);
+    }finally{ showLoader(false); }
+  },
+  async saveAll(rows){
+    showLoader(true);
+    try{
+      await fetch(REST('/plots'), {
+        method:'POST',
+        headers:{ ...baseHeaders, 'Content-Type':'application/json', 'Prefer':'resolution=merge-duplicates' },
+        body: JSON.stringify(rows.map(toDbRow))
+      }).then(handle);
+      const ids = rows.map(r=>r.id);
+      if (ids.length===0){
+        await fetch(REST('/plots'), { method:'DELETE', headers: baseHeaders }).then(handle);
+      }else{
+        await fetch(REST(`/plots?id=not.in.(${ids.join(',')})`), {
+          method:'DELETE', headers: baseHeaders
+        }).then(handle);
+      }
+    }finally{ showLoader(false); }
+  },
+  async updateOne(id, patch) {
+    showLoader(true);
+    try {
+      await fetch(REST(`/plots?id=eq.${id}`), {
+        method: 'PATCH',
+        headers: { ...baseHeaders, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(patch),
+      }).then(handle);
+    } finally {
+      showLoader(false);
+    }
+  },
+};
+// ===== end adapter =====
+
+
+/* =======================
+   DOM参照
+======================= */
+const elRowsA = document.getElementById('rows-A');
+const elRowsB = document.getElementById('rows-B');
+const loader = document.getElementById('loader');
+const calendarPanel = document.getElementById('calendar-panel');
+
+// Modal Elements
+const modal = document.getElementById('crop-modal');
+const modalTitle = document.getElementById('modal-title');
+const modalCloseBtn = document.getElementById('modal-close-btn');
+const cropForm = document.getElementById('crop-form');
+const saveBtn = document.getElementById('save-btn');
+const deleteBtn = document.getElementById('delete-btn');
+const cancelBtn = document.getElementById('cancel-btn');
+const elIconPalette = document.getElementById('icon-palette');
+const elIconTabs = document.getElementById('icon-tabs');
+const imageInput = document.getElementById('form-plot-image');
+const imagePreview = document.getElementById('image-preview');
+const clearImageBtn = document.getElementById('clear-image-btn');
+
+
+/* =======================
+   ローダー
+======================= */
+function showLoader(b){ loader.classList.toggle('show', b); }
+
+
+/* =======================
+   天気
+======================= */
+const weatherCache = new Map();
+async function fetchWeatherForMonth(year, month) {
+    const cacheKey = `${year}-${month}`;
+    if (weatherCache.has(cacheKey)) {
+        return weatherCache.get(cacheKey);
+    }
+    
+    const tamaLat = 35.6486;
+    const tamaLon = 139.4478;
+    const startDate = `${year}-${String(month).padStart(2,'0')}-01`;
+    const lastDayOfMonth = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2,'0')}-${String(lastDayOfMonth).padStart(2,'0')}`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${tamaLat}&longitude=${tamaLon}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo&start_date=${startDate}&end_date=${endDate}`;
+
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Weather API fetch failed');
+        const data = await res.json();
+        const weatherData = {};
+        if (data.daily?.time) {
+            data.daily.time.forEach((time, index) => {
+                weatherData[time] = {
+                    code: data.daily.weather_code[index],
+                    max: data.daily.temperature_2m_max[index],
+                    min: data.daily.temperature_2m_min[index],
+                };
+            });
+        }
+        weatherCache.set(cacheKey, weatherData);
+        return weatherData;
+    } catch (error) {
+        console.error("Failed to fetch weather data:", error);
+        return {};
+    }
+}
+function getWeatherIcon(code) {
+    if ([0].includes(code)) return '☀️'; // Clear sky
+    if ([1, 2, 3].includes(code)) return '☁️'; // Mainly clear, partly cloudy, and overcast
+    if ([45, 48].includes(code)) return '🌫️'; // Fog
+    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return '🌧️'; // Drizzle, Rain, Showers
+    if ([71, 73, 75, 85, 86].includes(code)) return '🌨️'; // Snow
+    if ([95, 96, 99].includes(code)) return '⛈️'; // Thunderstorm
+    return '❔';
+}
+
+/* =======================
+   カレンダー
+======================= */
+function getWeekDays(date) {
+    const d = new Date(date);
+    const dayOfWeek = d.getDay(); // 0 (Sun) - 6 (Sat)
+    d.setDate(d.getDate() - dayOfWeek); // Move to Sunday
+    const week = [];
+    for (let i = 0; i < 7; i++) {
+        week.push(new Date(d));
+        d.setDate(d.getDate() + 1);
+    }
+    return week;
+}
+
+async function renderCalendar() {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    const weatherData = await fetchWeatherForMonth(year, month + 1);
+    
+    // If the week spans two months, fetch the next month's weather too
+    const weekDaysForWeather = getWeekDays(selectedDate);
+    const lastDayOfWeek = weekDaysForWeather[6];
+    if(lastDayOfWeek.getMonth() !== month) {
+        await fetchWeatherForMonth(lastDayOfWeek.getFullYear(), lastDayOfWeek.getMonth() + 1);
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const renderDay = (date, isOtherMonth = false) => {
+        const dateStr = formatDateToJstString(date);
+        
+        const dateForCompare = new Date(date);
+        dateForCompare.setHours(0, 0, 0, 0);
+        const timeForCompare = dateForCompare.getTime();
+
+        const isToday = timeForCompare === today.getTime();
+        const isSelected = timeForCompare === new Date(selectedDate).setHours(0, 0, 0, 0).valueOf();
+        
+        let classList = 'day';
+        if (isToday) classList += ' today';
+        if (isSelected) classList += ' selected';
+        if (isOtherMonth) classList += ' other-month';
+
+        const weather = weatherCache.get(`${date.getFullYear()}-${date.getMonth()+1}`)?. [dateStr];
+
+        return `<div class="${classList}" data-date="${dateStr}">
+            <span class="day-number">${date.getDate()}</span>
+            ${weather ? `
+                <div class="weather-info">
+                    <span class="weather-icon">${getWeatherIcon(weather.code)}</span>
+                    <div>${Math.round(weather.max)}°/${Math.round(weather.min)}°</div>
+                </div>
+            ` : ''}
+        </div>`;
+    };
+
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    const dayNamesHtml = dayNames.map(name => `<div class="day-name">${name}</div>`).join('');
+    
+    // Week View
+    const weekDays = getWeekDays(selectedDate);
+    const weekViewHtml = `
+      <div class="calendar-grid week-view">
+        ${dayNamesHtml}
+        ${weekDays.map(day => renderDay(day)).join('')}
+      </div>`;
+
+    // Month View
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const lastDayPrevMonth = new Date(year, month, 0);
+
+    let monthGridHtml = '';
+    for (let i = firstDay.getDay(); i > 0; i--) {
+        const d = new Date(lastDayPrevMonth);
+        d.setDate(lastDayPrevMonth.getDate() - i + 1)
+        monthGridHtml += renderDay(d, true);
+    }
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+        monthGridHtml += renderDay(new Date(year, month, i));
+    }
+    const remaining = 7 - (lastDay.getDay() + 1);
+    if(remaining < 7 && remaining > 0) {
+      for (let i = 1; i <= remaining; i++) {
+        monthGridHtml += renderDay(new Date(year, month + 1, i), true);
+      }
+    }
+    const monthViewHtml = `<div class="calendar-grid">${dayNamesHtml}${monthGridHtml}</div>`;
+
+    let panelHtml = `
+        <div class="calendar-header">
+            <h3>${isCalendarOpen ? `${year}年 ${month + 1}月` : `${selectedDate.getFullYear()}年 ${selectedDate.getMonth() + 1}月`}</h3>
+            <div class="calendar-nav">
+                <button class="btn btn-sm" id="today-btn">今日</button>
+                <button class="btn btn-sm" id="prev-btn">＜</button>
+                <button class="btn btn-sm" id="next-btn">＞</button>
+                <button class="btn btn-sm" id="toggle-view-btn" title="表示切替">${isCalendarOpen ? '🔼' : '📅'}</button>
+            </div>
+        </div>
+        <div class="week-view-container">
+          ${weekViewHtml}
+        </div>
+        <div class="month-view-container">
+          ${monthViewHtml}
+        </div>
+    `;
+    calendarPanel.innerHTML = panelHtml;
+    calendarPanel.classList.toggle('month-view-active', isCalendarOpen);
+
+    // Event listeners
+    document.getElementById('toggle-view-btn').onclick = () => {
+        isCalendarOpen = !isCalendarOpen;
+        if (isCalendarOpen) {
+          calendarDate = new Date(selectedDate);
+        }
+        renderCalendar();
+    };
+    document.getElementById('prev-btn').onclick = () => {
+      if (isCalendarOpen) {
+        calendarDate.setMonth(month - 1);
+      } else {
+        selectedDate.setDate(selectedDate.getDate() - 7);
+        calendarDate = new Date(selectedDate);
+      }
+      renderCalendar();
+      if (!isCalendarOpen) renderField();
+    };
+    document.getElementById('next-btn').onclick = () => {
+      if (isCalendarOpen) {
+        calendarDate.setMonth(month + 1);
+      } else {
+        selectedDate.setDate(selectedDate.getDate() + 7);
+        calendarDate = new Date(selectedDate);
+      }
+      renderCalendar();
+      if (!isCalendarOpen) renderField();
+    };
+    document.getElementById('today-btn').onclick = () => {
+      const today = new Date();
+      selectedDate = today;
+      calendarDate = today;
+      isCalendarOpen = false;
+      renderCalendar();
+      renderField();
+    };
+    calendarPanel.querySelectorAll('.day:not(.other-month)').forEach(day => {
+        day.onclick = () => {
+            const newDate = new Date(day.dataset.date);
+            selectedDate = newDate;
+            if(isCalendarOpen) {
+                calendarDate = newDate;
+                isCalendarOpen = false;
+                renderCalendar();
+            } else {
+              calendarPanel.querySelector('.day.selected')?.classList.remove('selected');
+              day.classList.add('selected');
+            }
+            renderField();
+        };
+    });
+}
+
+
+/* =======================
+   圃場レンダリング
+======================= */
+function getCropsForDate(date){
+  const ds = formatDateToJstString(date);
+  return allCrops.filter(c=>{
+    const started = c.startDate <= ds;
+    const ended = c.endDate && c.endDate < ds;
+    return started && !ended;
+  });
+}
+
+function renderField(){
+  elRowsA.innerHTML = ''; elRowsB.innerHTML = '';
+  const cropsOnDate = getCropsForDate(selectedDate);
+  const index = new Map(); // "エリアA#1" => [crop,...]
+  for(const c of cropsOnDate){
+    const k = `${c.area}#${c.row}`;
+    (index.get(k) ?? index.set(k,[]).get(k)).push(c);
+  }
+
+  for (const [area, count] of Object.entries(AREAS)){
+    for (let i=1;i<=count;i++){
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.dataset.area = area; row.dataset.row = String(i);
+      row.innerHTML = `<span class="tag">${area.startsWith('エリアA')?'A':'B'}-${i}</span>`;
+      row.onclick = ()=> handleRowClick(area, i);
+      
+      const list = index.get(`${area}#${i}`) || [];
+      if (list.length > 0) {
+        const cropsContainer = document.createElement('div');
+        cropsContainer.className = 'crops-container';
+
+        list.forEach(c=>{
+          const el = document.createElement('div');
+          el.className = 'planted-crop';
+          const mmdd = new Date(c.startDate).toLocaleDateString('ja-JP',{timeZone: 'Asia/Tokyo', month:'2-digit',day:'2-digit'});
+          const iconHTML = (c.icon && c.icon.startsWith('data:image'))
+              ? `<img src="${c.icon}" class="icon-img" alt="${c.name}">`
+              : `<span class="icon">${c.icon || '🌱'}</span>`;
+          el.innerHTML = `${iconHTML}<span class="date">${mmdd}</span>`;
+          el.title = `${c.name} (${c.startDate}〜)`;
+          el.onclick = (ev)=>{ ev.stopPropagation(); openModal(c); };
+          cropsContainer.appendChild(el);
+        });
+        row.appendChild(cropsContainer);
+      }
+      (area==='エリアA' ? elRowsA : elRowsB).appendChild(row);
+    }
+  }
+}
+
+/* =======================
+   クリック & フォーム動作
+======================= */
+function handleRowClick(area, row){
+  openModal({ area, row: String(row), startDate: formatDateToJstString(selectedDate) });
+}
+
+async function handleFormSubmit(event) {
+  event.preventDefault();
+  const id = document.getElementById('form-plot-id').value;
+  const defaultFirstIcon = CROP_CATEGORIES[Object.keys(CROP_CATEGORIES)[0]][0].icon;
+
+  const plotData = {
+    id: id || (crypto.randomUUID?.() ?? String(Date.now())),
+    area: document.getElementById('form-plot-area').value,
+    row: Number(document.getElementById('form-plot-row').value),
+    name: document.getElementById('form-plot-name').value,
+    icon: document.getElementById('form-plot-icon').value || defaultFirstIcon,
+    startDate: document.getElementById('form-plot-start-date').value,
+    endDate: document.getElementById('form-plot-end-date').value || null,
+    status: document.getElementById('form-plot-status').value,
+  };
+
+  if (!plotData.name || !plotData.startDate) {
+    alert('作物名と植付日は必須です。');
+    return;
+  }
+
+  if (id) {
+    const index = allCrops.findIndex(c => c.id === id);
+    if (index > -1) allCrops[index] = plotData;
+  } else {
+    allCrops.push(plotData);
+  }
+
+  await storage.saveAll(allCrops);
+  closeModal();
+  renderField();
+}
+
+async function handleDeleteClick() {
+  const id = document.getElementById('form-plot-id').value;
+  if (!id) { closeModal(); return; }
+
+  if (!confirm('この作物を収穫済みにしますか？\n終了日に今日の日付が設定されます。')) return;
+
+  const idx = allCrops.findIndex(c => c.id === id);
+  if (idx === -1) { closeModal(); return; }
+
+  const todayStr = formatDateToJstString();
+  allCrops[idx].endDate = todayStr;
+  allCrops[idx].status = 'harvested';
+  
+  closeModal();
+  renderField();
+
+  await storage.updateOne(id, { end_date: todayStr, status: 'harvested' });
+}
+
+
+/* =======================
+   ユーティリティ
+======================= */
+function formatDateToJstString(date = new Date()) {
+    const d = new Date(date);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+}
+
+
+function clearImageIcon(){
+    imagePreview.src = '';
+    imagePreview.classList.add('image-preview-hidden');
+    imageInput.value = '';
+    clearImageBtn.style.display = 'none';
+    if(document.getElementById('form-plot-icon').value.startsWith('data:image')){
+        document.getElementById('form-plot-icon').value = '';
+    }
+}
+
+/* =======================
+   モーダル
+======================= */
+function openModal(crop = null) {
+  cropForm.reset();
+  const isEdit = crop && crop.id;
+  
+  modalTitle.textContent = isEdit ? '作物の編集' : '作物の追加';
+  
+  document.getElementById('form-plot-id').value = crop?.id || '';
+  document.getElementById('form-plot-area').value = crop?.area || '';
+  document.getElementById('form-plot-row').value = crop?.row || '';
+  document.getElementById('form-plot-name').value = crop?.name || '';
+  document.getElementById('form-plot-start-date').value = crop?.startDate || formatDateToJstString();
+  document.getElementById('form-plot-end-date').value = crop?.endDate || '';
+  document.getElementById('form-plot-status').value = crop?.status || 'growing';
+  
+  elIconTabs.innerHTML = '';
+  elIconPalette.innerHTML = '';
+  clearImageIcon();
+
+  const allIconsList = Object.values(CROP_CATEGORIES).flat();
+
+  function renderIconButtons(category) {
+      elIconPalette.innerHTML = '';
+      const icons = CROP_CATEGORIES[category] || [];
+      
+      icons.forEach(cropInfo => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'icon-btn';
+          btn.textContent = cropInfo.icon;
+          btn.setAttribute('aria-label', cropInfo.name);
+          btn.onclick = () => {
+              clearImageIcon();
+              elIconPalette.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('selected'));
+              btn.classList.add('selected');
+              document.getElementById('form-plot-icon').value = cropInfo.icon;
+              const nameInput = document.getElementById('form-plot-name');
+              if (!nameInput.value || allIconsList.some(c => c.name === nameInput.value)) {
+                  nameInput.value = cropInfo.name;
+              }
+          };
+          elIconPalette.appendChild(btn);
+      });
+  }
+
+  Object.keys(CROP_CATEGORIES).forEach(category => {
+      const tabBtn = document.createElement('button');
+      tabBtn.type = 'button';
+      tabBtn.className = 'tab-btn';
+      tabBtn.textContent = category;
+      tabBtn.dataset.category = category;
+      tabBtn.onclick = () => {
+          elIconTabs.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          tabBtn.classList.add('active');
+          renderIconButtons(category);
+          const selectedIconValue = document.getElementById('form-plot-icon').value;
+          const selectedBtn = Array.from(elIconPalette.children).find(btn => btn.textContent === selectedIconValue);
+          if (selectedBtn) {
+              selectedBtn.classList.add('selected');
+          }
+      };
+      elIconTabs.appendChild(tabBtn);
+  });
+  
+  let initialCategory = Object.keys(CROP_CATEGORIES)[0];
+  if (isEdit && crop?.icon && !crop.icon.startsWith('data:image')) {
+      for (const [category, icons] of Object.entries(CROP_CATEGORIES)) {
+          if (icons.some(i => i.icon === crop.icon)) {
+              initialCategory = category;
+              break;
+          }
+      }
+  }
+
+  const initialTab = elIconTabs.querySelector(`[data-category="${initialCategory}"]`);
+  if (initialTab) {
+    initialTab.classList.add('active');
+    renderIconButtons(initialCategory);
+  }
+
+  if (isEdit && crop?.icon) {
+      if (crop.icon.startsWith('data:image')) {
+          imagePreview.src = crop.icon;
+          imagePreview.classList.remove('image-preview-hidden');
+          clearImageBtn.style.display = 'block';
+      } else {
+          const currentIconBtn = Array.from(elIconPalette.children).find(btn => btn.textContent === crop.icon);
+          if (currentIconBtn) currentIconBtn.classList.add('selected');
+      }
+      document.getElementById('form-plot-icon').value = crop.icon;
+  } else if (!isEdit) {
+    const firstIconBtn = elIconPalette.children[0];
+    if (firstIconBtn) {
+        firstIconBtn.click(); // Selects and sets icon/name
+    }
+  }
+
+  deleteBtn.style.display = isEdit ? 'block' : 'none';
+  modal.classList.remove('modal-hidden');
+}
+
+function closeModal(){ modal.classList.add('modal-hidden'); }
+
+/* =======================
+   エリアタブ
+======================= */
+function setupAreaTabs() {
+  const tabsContainer = document.querySelector('.area-tabs');
+  if (!tabsContainer) return;
+
+  tabsContainer.addEventListener('click', (e) => {
+    if (!e.target.matches('.area-tab')) return;
+    const targetId = e.target.dataset.areaTarget;
+    tabsContainer.querySelectorAll('.area-tab').forEach(tab => tab.classList.remove('active'));
+    e.target.classList.add('active');
+    document.querySelectorAll('.area').forEach(area => {
+      area.classList.toggle('active', area.id === targetId);
+    });
+  });
+}
+
+/* =======================
+   初期化
+======================= */
+async function main(){
+  cropForm.addEventListener('submit', handleFormSubmit);
+  deleteBtn.addEventListener('click', handleDeleteClick);
+  cancelBtn.addEventListener('click', closeModal);
+  modalCloseBtn.onclick = closeModal;
+  modal.addEventListener('click', (e)=>{ if (e.target===modal) closeModal(); });
+
+  imageInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          const base64 = e.target.result;
+          document.getElementById('form-plot-icon').value = base64;
+          imagePreview.src = base64;
+          imagePreview.classList.remove('image-preview-hidden');
+          clearImageBtn.style.display = 'block';
+          elIconPalette.querySelectorAll('.icon-btn.selected').forEach(b => b.classList.remove('selected'));
+      };
+      reader.readAsDataURL(file);
+  });
+  clearImageBtn.addEventListener('click', clearImageIcon);
+
+  setupAreaTabs();
+
+  allCrops = await storage.load();
+  await renderCalendar();
+  renderField();
+}
+main();
+</script>
+</body>
+</html>
