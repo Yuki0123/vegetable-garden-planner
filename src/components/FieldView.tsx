@@ -90,7 +90,6 @@ export function FieldView({
                           }}
                           aria-label={`${plot.name} (${plot.startDate}) を編集`}
                         >
-                          {/* FIX: The 'icon' property does not exist on the UIPlot type. Switched to use the 'svg' property instead. */}
                           {plot.svg ? (
                             <span className="icon svg-icon" dangerouslySetInnerHTML={{ __html: plot.svg }} />
                           ) : (

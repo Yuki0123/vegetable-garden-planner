@@ -10,7 +10,6 @@ import { Plot, UIPlot, PlotStatus, Crop } from './types';
 const toUIPlot = (p: Plot): UIPlot => ({
   id: p.id,
   name: p.name,
-  icon: p.icon ?? null,
   svg: p.svg ?? null,
   area: p.area,
   row: p.row_no,
@@ -21,7 +20,7 @@ const toUIPlot = (p: Plot): UIPlot => ({
 });
 
 // UI用データ(UIPlot)をDBデータ(Plot)に変換するマッパー
-const fromUIPlot = (p: UIPlot): Omit<Plot, 'created_at' | 'updated_at' | 'svg' | 'icon'> => ({
+const fromUIPlot = (p: UIPlot): Omit<Plot, 'svg'> => ({
   id: p.id,
   name: p.name,
   area: p.area,
@@ -36,7 +35,6 @@ const fromUIPlot = (p: UIPlot): Omit<Plot, 'created_at' | 'updated_at' | 'svg' |
 const getInitialValue = (defaults: Partial<UIPlot> = {}): UIPlot => ({
   id: crypto.randomUUID(),
   name: '',
-  icon: null,
   svg: null,
   area: 'エリアA',
   row: 1,
@@ -180,8 +178,8 @@ export function App() {
           <div className="modal-overlay" onClick={closeModal}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
               <h2>{isNewPlot ? '新規栽培計画' : '計画の編集'}</h2>
+              {/* FIX: The `key` prop was removed to fix a TypeScript error. State reset logic has been moved inside the FieldPanel component. */}
               <FieldPanel
-                key={editingPlot.id}
                 value={editingPlot}
                 onSave={handleSave}
                 onCancel={closeModal}

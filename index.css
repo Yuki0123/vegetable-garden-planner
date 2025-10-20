@@ -541,17 +541,18 @@ main {
 .crop-item .icon.svg-icon svg {
   width: 24px;
   height: 24px;
+  color: initial;
 }
 
 .crop-selector-item .icon.svg-icon svg {
   width: 36px;
   height: 36px;
+  color: initial;
 }
 
-.icon.svg-icon svg [stroke] {
-  stroke-width: 2;
+#svg-icon {
+  fill: initial;
 }
-
 
 /* Responsive Styles */
 @media (max-width: 767px) {

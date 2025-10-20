@@ -44,28 +44,13 @@ export function FieldPanel({ value, onSave, onCancel, crops }: Props) {
 
   useEffect(() => {
     setV(value);
-    
-    // FIX: Reset active group ID when the editing plot changes. This replaces the need for a `key` prop.
-    if (value.cropId) {
-      const selectedCrop = crops.find(c => c.id === value.cropId);
-      if (selectedCrop?.group?.id) {
-        setActiveGroupId(selectedCrop.group.id);
-        return;
-      }
-    }
-    if (cropGroups.length > 0) {
-      setActiveGroupId(cropGroups[0].id);
-    } else {
-      setActiveGroupId(undefined);
-    }
-  }, [value, crops, cropGroups]);
+  }, [value]);
 
   const handleCropSelect = (selectedCrop: Crop) => {
     setV({
       ...v,
       cropId: selectedCrop.id,
       name: selectedCrop.name ?? '',
-      // FIX: The 'icon' property does not exist on the UIPlot type. It has been removed.
       svg: selectedCrop.svg ?? null,
     });
   };
@@ -99,11 +84,11 @@ export function FieldPanel({ value, onSave, onCancel, crops }: Props) {
                 onClick={() => handleCropSelect(crop)}
                 title={crop.name ?? ''}
               >
-              {crop.svg ? (
-                <span className="icon svg-icon" dangerouslySetInnerHTML={{ __html: crop.svg }} />
-              ) : (
-                <span className="icon"></span>
-              )}
+                {crop.svg ? (
+                  <span className="icon svg-icon" dangerouslySetInnerHTML={{ __html: crop.svg }} />
+                ) : (
+                  <span className="icon"></span>
+                )}
                 <span className="name">{crop.name}</span>
               </button>
             ))}

@@ -10,7 +10,6 @@ export type Plot = {
   end_date?: string | null;
   status: PlotStatus;
   crop_id?: string | null; // ← 重要: リレーションキー
-  icon?: string | null;     // 表示用にcropsテーブルからJOINした絵文字データ
   svg?: string | null;      // 表示用にiconsテーブルからJOINしたSVGデータ
 };
 
@@ -22,7 +21,6 @@ export type CropGroup = {
 export type Crop = {
   id: string;
   name?: string | null;
-  icon?: string | null;     // 絵文字
   svg?: string | null;      // iconsテーブルからJOINしたSVGデータ
   group_id?: string | null;
   group?: CropGroup | null; // join結果
@@ -37,7 +35,6 @@ export type PlotJoined = Plot & {
 export type UIPlot = {
   id:string;
   name:string;
-  icon?: string | null;     // 絵文字データ
   svg?: string | null;      // SVGデータ
   area:string;
   row:number;

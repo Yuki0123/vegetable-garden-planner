@@ -36,7 +36,7 @@ export async function listPlots(opts?: { order?: 'asc' | 'desc' }): Promise<Plot
       'id,area,row_no,name,start_date,end_date,status,crop_id,',
       // リレーション：plots.crop_id -> crops.id
       'crops!inner(',
-      '  id,name,icon,group_id,', // icon を追加
+      '  id,name,group_id,',
       '  group:group_id(id,name),',
       // リレーション：crops.icon_id -> icons.id
       '  icons(svg)',
@@ -58,7 +58,6 @@ export async function listPlots(opts?: { order?: 'asc' | 'desc' }): Promise<Plot
     end_date: j.end_date ?? null,
     status: j.status,
     crop_id: j.crop_id ?? j.crops?.id ?? null,
-    icon: j.crops?.icon ?? null, // icon を追加
     svg: j.crops?.icons?.svg ?? null,
   }));
 
@@ -67,7 +66,7 @@ export async function listPlots(opts?: { order?: 'asc' | 'desc' }): Promise<Plot
 
 export async function listCrops(): Promise<Crop[]> {
   const url = new URL(REST('/crops'));
-  url.searchParams.set('select', 'id,name,icon,group:group_id(id,name),icons(svg)'); // icon を追加
+  url.searchParams.set('select', 'id,name,group:group_id(id,name),icons(svg)');
   url.searchParams.set('order', 'group_id.asc,name.asc');
   const res = await fetch(url.toString(), { headers: baseHeaders });
   // SupabaseのRPC/RESTはJOINした子のテーブルを複数形(icons)で返すため、ここで単数形にマッピングし直す
@@ -80,7 +79,7 @@ export async function listCrops(): Promise<Crop[]> {
 
 // 以降の write 系は、plots テーブルの実列に合わせて安全に実装。
 // svg は DB に送らない（表示用は JOINで解決するため）。
-type PlotWrite = Omit<Plot, 'svg' | 'icon'>;
+type PlotWrite = Omit<Plot, 'svg'>;
 
 export async function addPlot(p: PlotWrite): Promise<Plot> {
   const res = await fetch(REST('/plots'), {
