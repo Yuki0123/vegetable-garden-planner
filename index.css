@@ -1,24 +1,24 @@
 :root {
-  --background-color: #f5f3f0;
-  --header-bg: #f5f3f0; /* アースカラーに変更 */
-  --area-bg: #ffffff;
-  --row-bg: #e9e6e1;
-  --row-hover-bg: #dcd8d2;
-  --timeline-border: #d1ccc5;
-  --text-color: #4a443d;
-  --primary-color: #5a8a5f;
-  --primary-hover: #4a734f;
-  --danger-color: #c96f53;
-  --danger-hover: #b55f45;
+  --background-color: #f8f7f4; /* Slightly off-white */
+  --header-bg: #f8f7f4;
+  --area-bg: #ffffff; /* White */
+  --row-bg: #f0ede8; /* Sand Beige */
+  --row-hover-bg: #e9e5e0;
+  --timeline-border: #d8dcd6;
+  --text-color: #4a4a4a; /* Darker Gray */
+  --primary-color: #6d8b74; /* Muted Green */
+  --primary-hover: #557153;
+  --danger-color: #d9534f; /* Soft Red */
+  --danger-hover: #c9302c;
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   
-  --status-growing: #5a8a5f;
-  --status-harvested: #8d837a;
-  --status-discarded: #d9a561;
-  --highlight-border: #d9a561;
-  --date-marker-color: #c96f53;
+  --status-growing: #6d8b74;
+  --status-harvested: #a9a9a9; /* Medium Gray */
+  --status-discarded: #e59866; /* Muted Orange */
+  --highlight-border: #e59866;
+  --date-marker-color: #d9534f;
 
-  --shadow: 0 2px 4px rgba(0,0,0,0.05); /* Softer shadow */
+  --shadow: 0 1px 3px rgba(0,0,0,0.04);
   --border-radius: 0.5rem;
 }
 
@@ -92,7 +92,7 @@ main {
 .tabs {
   display: flex;
   margin-bottom: 1rem;
-  border-bottom: 2px solid var(--row-bg);
+  border-bottom: 2px solid var(--timeline-border);
 }
 
 .tab-button {
@@ -102,7 +102,7 @@ main {
   cursor: pointer;
   font-size: 1.1rem;
   font-weight: bold;
-  color: #8d837a;
+  color: #8a8a8a;
   position: relative;
   top: 2px;
   border-bottom: 2px solid transparent;
@@ -133,6 +133,7 @@ main {
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
   padding: 1rem;
+  border: 1px solid var(--timeline-border);
 }
 
 .field-area h2 {
@@ -163,23 +164,17 @@ main {
   min-height: 60px;
 }
 
-.field-row.occupied {
-  background-color: #e8f3e9;
-  cursor: pointer;
-}
-.field-row.occupied:hover {
-  background-color: #e0f0e2;
-}
+.field-row.occupied,
 .field-row.empty {
-  color: #8d837a;
-  background-color: #fbfaf9;
-  border-style: dashed;
+  background-color: var(--row-bg);
   cursor: pointer;
 }
+
+.field-row.occupied:hover,
 .field-row.empty:hover {
   background-color: var(--row-hover-bg);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
 }
+
 
 .field-row .row-number {
   font-weight: bold;
@@ -213,9 +208,25 @@ main {
 }
 .crop-item:hover {
   border-color: var(--primary-color);
-  background-color: #f2f8f3;
+  background-color: #f5f7f5;
   transform: translateY(-2px);
   box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+/* 収穫済み・撤去済みの作物のスタイルを追加 */
+.crop-item.status-harvested,
+.crop-item.status-discarded {
+  background-color: #f1f5f9; /* 収穫済み・撤去済みの背景色を統一 */
+}
+
+/* 栽培中でない作物のホバー効果を上書き */
+.crop-item.status-harvested:hover {
+  background-color: #e2e8f0;
+  border-color: var(--status-harvested);
+}
+.crop-item.status-discarded:hover {
+  background-color: #e2e8f0;
+  border-color: var(--status-discarded);
 }
 
 .crop-item .icon {
@@ -228,7 +239,7 @@ main {
 
 .crop-item .date {
   font-size: 0.75rem;
-  color: #6b635b;
+  color: #64748b;
   margin-top: 0.25rem;
   white-space: nowrap;
 }
@@ -241,6 +252,7 @@ main {
   padding: 1rem;
   flex-shrink: 0;
   transition: all 0.3s ease-in-out;
+  border: 1px solid var(--timeline-border);
 }
 
 .calendar-header {
@@ -280,7 +292,7 @@ main {
   font-size: 1.6rem;
 }
 .calendar-header .nav-arrow:hover {
-  background-color: var(--row-bg);
+  background-color: var(--row-hover-bg);
 }
 
 .calendar-today-btn {
@@ -291,7 +303,7 @@ main {
   font-weight: 600;
 }
 .calendar-today-btn:hover {
-  background-color: var(--row-bg);
+  background-color: var(--row-hover-bg);
 }
 
 .calendar-toggle {
@@ -303,7 +315,7 @@ main {
   padding: 0;
 }
 .calendar-toggle:hover {
-  background-color: var(--row-bg);
+  background-color: var(--row-hover-bg);
 }
 
 .calendar-grid {
@@ -316,7 +328,7 @@ main {
 .calendar-grid .day-name {
   font-weight: 600;
   font-size: 0.8rem;
-  color: #8d837a;
+  color: #8a8a8a;
   padding-bottom: 0.5rem;
 }
 .day-cell {
@@ -325,7 +337,7 @@ main {
   justify-content: center;
   align-items: center;
   height: 38px;
-  border: 1px solid var(--row-bg);
+  border: 1px solid var(--timeline-border);
   border-radius: 0.375rem;
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s, border-color 0.2s;
@@ -333,17 +345,20 @@ main {
   background-color: transparent;
 }
 .day-cell.other-month {
-  color: #b0a8a0;
+  color: #b0b0b0;
+  cursor: default;
+  background-color: #fdfdfd;
 }
 .day-cell:not(.other-month):not(.selected):hover {
-  background-color: #e9e6e1;
+  background-color: var(--row-hover-bg);
 }
 .day-cell.is-today:not(.selected) {
-  border-color: var(--timeline-border);
+  font-weight: bold;
+  color: var(--primary-color);
 }
 .day-cell.selected {
-  background-color: #e8f3e9;
-  color: var(--text-color);
+  background-color: #eaf0e9; /* Light muted green */
+  color: var(--primary-color);
   font-weight: bold;
   border-color: var(--primary-color);
 }
@@ -428,8 +443,11 @@ main {
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.2s, opacity 0.2s;
-  background-color: #e9e6e1;
+  background-color: #e2e8f0;
   color: var(--text-color);
+}
+.btn:hover:not(:disabled) {
+  background-color: #cbd5e1;
 }
 .btn:disabled {
   opacity: 0.5;
@@ -483,7 +501,7 @@ main {
   border-color: var(--primary-color);
 }
 .crop-group-tab:not(.active):hover {
-  background-color: var(--row-bg);
+  background-color: var(--row-hover-bg);
 }
 
 .crop-selector-grid {
@@ -511,11 +529,11 @@ main {
 }
 
 .crop-selector-item:hover {
-  background-color: #f2f8f3;
+  background-color: #f5f7f5;
 }
 .crop-selector-item.selected {
   border-color: var(--primary-color);
-  background-color: #e8f3e9;
+  background-color: #d8e4d8;
   box-shadow: var(--shadow);
 }
 

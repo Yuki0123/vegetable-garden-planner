@@ -10,7 +10,6 @@ const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsIn
 
 const baseHeaders: Record<string, string> = {
   apikey: SB_ANON,
-  Authorization: `Bearer ${SB_ANON}`,
 };
 
 const REST = (p: string) => `${SB_URL}/rest/v1${p}`;

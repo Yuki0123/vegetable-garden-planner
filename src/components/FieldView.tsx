@@ -29,10 +29,7 @@ export function FieldView({
     
     plots
       .filter(p => {
-        // 栽培中の作物のみ表示する
-        if (p.status !== 'growing') {
-          return false;
-        }
+        // ステータスに関わらず、日付範囲内にあるものをすべて表示する
         const start = p.startDate;
         const end = p.endDate ?? '9999-12-31';
         return selectedDate >= start && selectedDate <= end;
@@ -83,7 +80,7 @@ export function FieldView({
                       {plotsInRow.map(plot => (
                         <button
                           key={plot.id}
-                          className="crop-item"
+                          className={`crop-item status-${plot.status}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectPlot(plot.id);
