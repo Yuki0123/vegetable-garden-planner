@@ -7,9 +7,10 @@ type Props = {
   onSave: (v: UIPlot) => void
   onCancel: () => void
   crops: Crop[]
+  isNewPlot: boolean // 新規かどうかを判定するフラグ
 }
 
-export function FieldPanel({ value, onSave, onCancel, crops }: Props) {
+export function FieldPanel({ value, onSave, onCancel, crops, isNewPlot }: Props) {
   const [v, setV] = useState<UIPlot>(value);
 
   const cropGroups = useMemo(() => {
@@ -38,21 +39,24 @@ export function FieldPanel({ value, onSave, onCancel, crops }: Props) {
     if (!activeGroupId) {
       return [];
     }
-    return crops.filter(c => c.group?.id === activeGroupId);
+    // 作物名をあいうえお順でソート
+    return crops
+      .filter(c => c.group?.id === activeGroupId)
+      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'ja'));
   }, [crops, activeGroupId]);
 
 
   useEffect(() => {
     setV(value);
-    
-    // FIX: Reset active group ID when the editing plot changes. This replaces the need for a `key` prop.
+    // 編集対象(value)が変更されたときに、アクティブなタブも同期して更新する
     if (value.cropId) {
       const selectedCrop = crops.find(c => c.id === value.cropId);
       if (selectedCrop?.group?.id) {
         setActiveGroupId(selectedCrop.group.id);
-        return;
+        return; // 正しいグループが見つかったので処理を終了
       }
     }
+    // 選択されている作物が無い場合や、グループが見つからない場合は最初のグループをデフォルトにする
     if (cropGroups.length > 0) {
       setActiveGroupId(cropGroups[0].id);
     } else {
@@ -65,7 +69,6 @@ export function FieldPanel({ value, onSave, onCancel, crops }: Props) {
       ...v,
       cropId: selectedCrop.id,
       name: selectedCrop.name ?? '',
-      // FIX: The 'icon' property does not exist on the UIPlot type. It has been removed.
       svg: selectedCrop.svg ?? null,
     });
   };
@@ -99,11 +102,11 @@ export function FieldPanel({ value, onSave, onCancel, crops }: Props) {
                 onClick={() => handleCropSelect(crop)}
                 title={crop.name ?? ''}
               >
-              {crop.svg ? (
-                <span className="icon svg-icon" dangerouslySetInnerHTML={{ __html: crop.svg }} />
-              ) : (
-                <span className="icon"></span>
-              )}
+                {crop.svg ? (
+                  <span className="icon svg-icon" dangerouslySetInnerHTML={{ __html: crop.svg }} />
+                ) : (
+                  <span className="icon"></span>
+                )}
                 <span className="name">{crop.name}</span>
               </button>
             ))}
@@ -115,18 +118,24 @@ export function FieldPanel({ value, onSave, onCancel, crops }: Props) {
         <label>開始日</label>
         <input type="date" required value={v.startDate} onChange={e=>setV({...v, startDate:e.target.value})}/>
       </div>
-      <div className="form-group">
-        <label>終了日</label>
-        <input type="date" value={v.endDate ?? ''} onChange={e=>setV({...v, endDate:e.target.value || null})}/>
-      </div>
-      <div className="form-group">
-        <label>状態</label>
-        <select value={v.status} onChange={e=>setV({...v, status:e.target.value as PlotStatus})}>
-          <option value="growing">栽培中</option>
-          <option value="harvested">収穫済</option>
-          <option value="discarded">撤去</option>
-        </select>
-      </div>
+
+      {/* 新規計画のときは、終了日と状態を非表示にする */}
+      {!isNewPlot && (
+        <>
+          <div className="form-group">
+            <label>終了日</label>
+            <input type="date" value={v.endDate ?? ''} onChange={e=>setV({...v, endDate:e.target.value || null})}/>
+          </div>
+          <div className="form-group">
+            <label>状態</label>
+            <select value={v.status} onChange={e=>setV({...v, status:e.target.value as PlotStatus})}>
+              <option value="growing">栽培中</option>
+              <option value="harvested">収穫済</option>
+              <option value="discarded">撤去</option>
+            </select>
+          </div>
+        </>
+      )}
 
       <div className="modal-actions" style={{ justifyContent: 'flex-end' }}>
         <div style={{ display: 'flex', gap: '0.5rem' }}>

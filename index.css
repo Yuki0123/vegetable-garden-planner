@@ -373,6 +373,9 @@ main {
   box-shadow: var(--shadow);
   width: 90%;
   max-width: 500px;
+  /* コンテンツが画面を超える場合にスクロールさせる */
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .modal-content h2 {
@@ -548,10 +551,6 @@ main {
   width: 36px;
   height: 36px;
   color: initial;
-}
-
-#svg-icon {
-  fill: initial;
 }
 
 /* Responsive Styles */

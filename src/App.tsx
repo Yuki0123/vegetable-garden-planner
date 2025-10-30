@@ -178,12 +178,12 @@ export function App() {
           <div className="modal-overlay" onClick={closeModal}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
               <h2>{isNewPlot ? '新規栽培計画' : '計画の編集'}</h2>
-              {/* FIX: The `key` prop was removed to fix a TypeScript error. State reset logic has been moved inside the FieldPanel component. */}
               <FieldPanel
                 value={editingPlot}
                 onSave={handleSave}
                 onCancel={closeModal}
                 crops={allCrops}
+                isNewPlot={isNewPlot}
               />
             </div>
           </div>
